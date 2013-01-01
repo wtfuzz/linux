@@ -60,6 +60,8 @@
 #include "armctrl.h"
 #include "clock.h"
 
+#include "sensors.h"
+
 #ifdef CONFIG_BCM_VC_CMA
 #include <linux/broadcom/vc_cma.h>
 #endif
@@ -692,6 +694,7 @@ static void bcm2708_power_off(void)
 void __init bcm2708_init(void)
 {
 	int i;
+	int err;
 
 #if defined(CONFIG_BCM_VC_CMA)
 	vc_cma_early_init();
@@ -752,6 +755,9 @@ void __init bcm2708_init(void)
 	spi_register_board_info(bcm2708_spi_devices,
 			ARRAY_SIZE(bcm2708_spi_devices));
 #endif
+
+	err = i2c_register_board_info(1, mpu_board_info, ARRAY_SIZE(mpu_board_info));
+	printk("register mpu6050 err=%d", err);
 }
 
 #define TIMER_PERIOD DIV_ROUND_CLOSEST(STC_FREQ_HZ, HZ)
@@ -759,8 +765,6 @@ void __init bcm2708_init(void)
 static void timer_set_mode(enum clock_event_mode mode,
 			   struct clock_event_device *clk)
 {
-	unsigned long stc;
-
 	switch (mode) {
 	case CLOCK_EVT_MODE_ONESHOT: /* Leave the timer disabled, .set_next_event will enable it */
 	case CLOCK_EVT_MODE_SHUTDOWN:

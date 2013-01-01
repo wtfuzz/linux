@@ -25,6 +25,8 @@
 
 #include <linux/amba/bus.h>
 
+#include "sensors.h"
+
 extern void __init bcm2708_init(void);
 extern void __init bcm2708_init_irq(void);
 extern void __init bcm2708_map_io(void);

@@ -28,6 +28,7 @@ enum iio_chan_type {
 	IIO_CAPACITANCE,
 	IIO_ALTVOLTAGE,
 	IIO_CCT,
+	IIO_QUATERNION,
 };
 
 enum iio_modifier {
@@ -51,6 +52,7 @@ enum iio_modifier {
 	IIO_MOD_LIGHT_RED,
 	IIO_MOD_LIGHT_GREEN,
 	IIO_MOD_LIGHT_BLUE,
+	IIO_MOD_R,
 };
 
 #define IIO_VAL_INT 1
