@@ -2379,12 +2379,17 @@ static int inv_mpu_probe(struct i2c_client *client,
 	struct inv_gyro_state_s *st;
 	struct iio_dev *indio_dev;
 	int result, reg_done;
+
+	printk("inv_mpu_probe\n");
+
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
+		printk("mpu check_functionality failed\n");
 		result = -ENODEV;
 		goto out_no_free;
 	}
 	indio_dev = iio_device_alloc(sizeof(*st));
 	if (indio_dev == NULL) {
+		printk("mpu iio_device_alloc returned NULL\n");
 		result =  -ENOMEM;
 		goto out_no_free;
 	}
@@ -2395,8 +2400,12 @@ static int inv_mpu_probe(struct i2c_client *client,
 	st->i2c_addr = client->addr;
 	st->plat_data =
 		*(struct mpu_platform_data *)dev_get_platdata(&client->dev);
+
+	printk("mpu check chip type plat_data=%p\n", st->plat_data);
+
 	/* power is turned on inside check chip type*/
 	result = inv_check_chip_type(st, id);
+	printk("result=%d\n", result);
 	if (result)
 		goto out_free;
 	if (INV_MPU3050 == st->chip_type)
@@ -2425,18 +2434,22 @@ static int inv_mpu_probe(struct i2c_client *client,
 	indio_dev->modes = INDIO_DIRECT_MODE;
 	indio_dev->currentmode = INDIO_DIRECT_MODE;
 
+	printk("mpu configure ring\n");
 	result = inv_mpu_configure_ring(indio_dev);
 	if (result)
 		goto out_free;
+	printk("mpu buffer_register\n");
 	result = iio_buffer_register(indio_dev, st->chan_info->channels,
 					st->chan_info->num_channels);
 	if (result)
 		goto out_unreg_ring;
 	st->irq = client->irq;
+	printk("mpu probe_trigger\n");
 	result = inv_mpu_probe_trigger(indio_dev);
 	if (result)
 		goto out_remove_ring;
 
+	printk("mpu device_register\n");
 	result = iio_device_register(indio_dev);
 	if (result)
 		goto out_remove_trigger;

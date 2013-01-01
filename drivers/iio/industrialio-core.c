@@ -826,6 +826,8 @@ struct iio_dev *iio_device_alloc(int sizeof_priv)
 	/* ensure 32-byte alignment of whole construct ? */
 	alloc_size += IIO_ALIGN - 1;
 
+	printk("iio alloc_size=%d sizeof_priv=%d", alloc_size, sizeof_priv);
+
 	dev = kzalloc(alloc_size, GFP_KERNEL);
 
 	if (dev) {
@@ -846,6 +848,10 @@ struct iio_dev *iio_device_alloc(int sizeof_priv)
 			return NULL;
 		}
 		dev_set_name(&dev->dev, "iio:device%d", dev->id);
+	}
+	else
+	{
+		printk(KERN_ERR "Failed to kzalloc %d", alloc_size);
 	}
 
 	return dev;

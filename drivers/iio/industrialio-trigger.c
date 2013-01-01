@@ -431,6 +431,7 @@ struct iio_trigger *iio_trigger_alloc(const char *fmt, ...)
 					  CONFIG_IIO_CONSUMERS_PER_TRIGGER,
 					  0);
 		if (trig->subirq_base < 0) {
+			printk("%s: irc_alloc_descs failed\n", __func__);
 			kfree(trig);
 			return NULL;
 		}
@@ -438,6 +439,7 @@ struct iio_trigger *iio_trigger_alloc(const char *fmt, ...)
 		trig->name = kvasprintf(GFP_KERNEL, fmt, vargs);
 		va_end(vargs);
 		if (trig->name == NULL) {
+			printk("%s: failed to get trigger name\n", __func__);
 			irq_free_descs(trig->subirq_base,
 				       CONFIG_IIO_CONSUMERS_PER_TRIGGER);
 			kfree(trig);

@@ -193,7 +193,8 @@
 #define FIQ_IRQS              (64 + 21)
 #define GPIO_IRQS	      (32*5)
 
-#define NR_IRQS		      HARD_IRQS+FIQ_IRQS+GPIO_IRQS
+#define NR_BCM2708_IRQS		      HARD_IRQS+FIQ_IRQS+GPIO_IRQS
+#define NR_IRQS									NR_BCM2708_IRQS + 64
 
 
 #endif /* _BCM2708_IRQS_H_ */
