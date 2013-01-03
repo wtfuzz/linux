@@ -407,7 +407,9 @@ struct inv_mpu_slave {
 
 #define REG_I2C_SLV4_CTRL       (0x34)
 #define REG_INT_PIN_CFG         (0x37)
+#define REG_INT_ENABLE					(0x38)
 #define REG_DMP_INT_STATUS      (0x39)
+#define REG_INT_STATUS					(0x3A)
 #define REG_EXT_SENS_DATA_00    (0x49)
 #define REG_I2C_SLV1_DO         (0x64)
 #define REG_I2C_MST_DELAY_CTRL  (0x67)

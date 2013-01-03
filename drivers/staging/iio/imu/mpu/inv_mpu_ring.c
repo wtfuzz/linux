@@ -41,6 +41,7 @@
 #include <linux/iio/trigger_consumer.h>
 #include <linux/iio/sysfs.h>
 
+#if 0
 /**
  *  reset_fifo_mpu3050() - Reset FIFO related registers
  *  @st:	Device driver instance.
@@ -70,8 +71,11 @@ static int reset_fifo_mpu3050(struct iio_dev *indio_dev)
 
 	/* disable interrupt */
 	result = inv_i2c_single_write(st, reg->int_enable, 0);
+	printk("mpu %s disable interrupt result=%d\n", __func__, result);
 	if (result)
 		return result;
+
+
 	/* disable the sensor output to FIFO */
 	result = inv_i2c_single_write(st, reg->fifo_en, 0);
 	if (result)
@@ -92,6 +96,7 @@ static int reset_fifo_mpu3050(struct iio_dev *indio_dev)
 		/* enable interrupt when DMP is done */
 		result = inv_i2c_single_write(st, reg->int_enable,
 					BIT_DMP_INT_EN);
+		printk("mpu %s enable dmp interrupt result=%d\n", __func__, result);
 		if (result)
 			return result;
 
@@ -105,6 +110,7 @@ static int reset_fifo_mpu3050(struct iio_dev *indio_dev)
 			st->chip_config.gyro_fifo_enable){
 			result = inv_i2c_single_write(st, reg->int_enable,
 							BIT_DATA_RDY_EN);
+			printk("mpu %s enable data ready interrupt result=%d\n", __func__, result);
 			if (result)
 				return result;
 		}
@@ -134,6 +140,8 @@ reset_fifo_fail:
 	pr_err("%s failed\n", __func__);
 	return result;
 }
+#endif
+
 /**
  *  reset_fifo_itg() - Reset FIFO related registers.
  *  @st:	Device driver instance.
@@ -170,6 +178,7 @@ static int reset_fifo_itg(struct iio_dev *indio_dev)
 
 	/* disable interrupt */
 	result = inv_i2c_single_write(st, reg->int_enable, 0);
+	printk("mpu %s disable interrupt result=%d\n", __func__, result);
 	if (result) {
 		pr_err("%s failed\n", __func__);
 		return result;
@@ -192,6 +201,7 @@ static int reset_fifo_itg(struct iio_dev *indio_dev)
 		if (st->chip_config.dmp_int_on) {
 			result = inv_i2c_single_write(st, reg->int_enable,
 							BIT_DMP_INT_EN);
+			printk("mpu %s enable dmp interrupt result=%d\n", __func__, result);
 			if (result)
 				return result;
 		}
@@ -214,6 +224,7 @@ static int reset_fifo_itg(struct iio_dev *indio_dev)
 			st->chip_config.compass_enable){
 			result = inv_i2c_single_write(st, reg->int_enable,
 						BIT_DATA_RDY_EN);
+			printk("mpu %s enable data ready interrupt result=%d\n", __func__, result);
 			if (result)
 				return result;
 		}
@@ -236,6 +247,7 @@ static int reset_fifo_itg(struct iio_dev *indio_dev)
 	}
 	return 0;
 reset_fifo_fail:
+	printk("%s: reset fifo failed!\n", __func__);
 	if (st->chip_config.dmp_on)
 		val = BIT_DMP_INT_EN;
 	else
@@ -251,9 +263,11 @@ reset_fifo_fail:
 static int inv_reset_fifo(struct iio_dev *indio_dev)
 {
 	struct inv_gyro_state_s *st = iio_priv(indio_dev);
+#if 0
 	if (INV_MPU3050 == st->chip_type)
 		return reset_fifo_mpu3050(indio_dev);
 	else
+#endif
 		return reset_fifo_itg(indio_dev);
 }
 /**
@@ -281,14 +295,15 @@ int set_inv_enable(struct iio_dev *indio_dev,
 		if (result)
 			return result;
 		result = inv_i2c_single_write(st, reg->int_enable, 0);
+		printk("mpu %s disable interrupt result=%d\n", __func__, result);
 		if (result)
 			return result;
 		/* disable fifo reading */
-		if (INV_MPU3050 != st->chip_type) {
+		//if (INV_MPU3050 != st->chip_type) {
 			result = inv_i2c_single_write(st, reg->user_ctrl, 0);
 			if (result)
 				return result;
-		}
+		//}
 		st->chip_config.enable = 0;
 	}
 	return 0;
@@ -368,6 +383,7 @@ static int put_scan_to_buf_q(struct iio_dev *indio_dev, unsigned char *d,
 	return d_ind;
 }
 
+#if 0
 static void inv_report_data_3050(struct iio_dev *indio_dev, s64 t,
 			int has_footer, unsigned char *data)
 {
@@ -410,6 +426,7 @@ static void inv_report_data_3050(struct iio_dev *indio_dev, s64 t,
 		buf[i] = t;
 	ring->access->store_to(indio_dev->buffer, (u8 *) buf, t);
 }
+
 /**
  *  inv_read_fifo_mpu3050() - Transfer data from FIFO to ring buffer for mpu3050.
  */
@@ -492,6 +509,8 @@ flush_fifo:
 	inv_clear_kfifo(st);
 	return IRQ_HANDLED;
 }
+#endif
+
 static int inv_report_gyro_accl_compass(struct iio_dev *indio_dev,
 					unsigned char *data, s64 t)
 {
@@ -632,16 +651,32 @@ irqreturn_t inv_read_fifo(int irq, void *dev_id)
 	struct inv_reg_map_s *reg;
 	s64 buf[8];
 	unsigned char *tmp;
+
+	uint8_t int_status;
+	uint8_t dmp_int_status;
+	uint8_t int_enable;
+
 	reg = &st->reg;
+
 	if (!(st->chip_config.accl_fifo_enable |
 		st->chip_config.gyro_fifo_enable |
 		st->chip_config.dmp_on |
 		st->chip_config.compass_fifo_enable))
+	{
+		printk("%s no interrupt sources enabled!\n", __func__);
 		goto end_session;
+	}
+
+	inv_i2c_read(st, REG_INT_STATUS, 1, &int_status);
+	printk("INT STATUS 0x%02X\n", int_status);
+	inv_i2c_read(st, REG_DMP_INT_STATUS, 1, &dmp_int_status);
+	printk("DMP INT STATUS 0x%02X\n", dmp_int_status);
+
+	inv_i2c_read(st, REG_INT_ENABLE, 1, &int_enable);
+	printk("INT ENABLE 0x%02X\n", int_enable);
+
 	if (st->chip_config.dmp_on && st->chip_config.flick_int_on) {
-		/*dmp interrupt status */
-		inv_i2c_read(st, REG_DMP_INT_STATUS, 1, data);
-		if (data[0] & 8)
+		if (dmp_int_status & 8)
 			sysfs_notify(&indio_dev->dev.kobj, NULL, "event_flick");
 	}
 	if (st->chip_config.lpa_mode) {
@@ -666,14 +701,20 @@ irqreturn_t inv_read_fifo(int irq, void *dev_id)
 		result = inv_i2c_read(st, reg->fifo_count_h,
 				FIFO_COUNT_BYTE, data);
 		if (result)
+		{
+			printk("%s: failed to read fifo count result=%d\n", __func__, result);
 			goto end_session;
+		}
+
 		fifo_count = (data[0] << 8) + data[1];
+		printk("%s: fifo_count=%d\n", __func__, fifo_count);
 		if (fifo_count < bytes_per_datum)
 			goto end_session;
 		if (fifo_count%2)
 			goto flush_fifo;
 		if (fifo_count >  FIFO_THRESHOLD)
 			goto flush_fifo;
+
 		/* Timestamp mismatch. */
 		if (kfifo_len(&st->timestamps) <
 			fifo_count / bytes_per_datum)
@@ -690,6 +731,7 @@ irqreturn_t inv_read_fifo(int irq, void *dev_id)
 		}
 	}
 	if (bytes_per_datum == 0) {
+		printk("%s: bytes_per_datum==0\n", __func__);
 		result = kfifo_to_user(&st->timestamps,
 			&timestamp, sizeof(timestamp), &copied);
 		if (result)
@@ -760,14 +802,17 @@ int inv_mpu_configure_ring(struct iio_dev *indio_dev)
 	indio_dev->setup_ops = &inv_mpu_ring_setup_ops;
 	/*scan count double count timestamp. should subtract 1. but
 	number of channels still includes timestamp*/
+
+#if 0
 	if (INV_MPU3050 == st->chip_type)
 		ret = request_threaded_irq(st->i2c->irq, inv_irq_handler,
 			inv_read_fifo_mpu3050,
-			IRQF_TRIGGER_RISING | IRQF_SHARED, "inv_irq", st);
+			IRQF_TRIGGER_RISING | IRQF_SHARED, "inv_mpu3050_irq", st);
 	else
+#endif
 		ret = request_threaded_irq(st->i2c->irq, inv_irq_handler,
 			inv_read_fifo,
-			IRQF_TRIGGER_RISING | IRQF_SHARED, "inv_irq", st);
+			IRQF_TRIGGER_RISING | IRQF_SHARED, "inv_mpu6050_irq", st);
 	if (ret)
 		goto error_iio_sw_rb_free;
 
