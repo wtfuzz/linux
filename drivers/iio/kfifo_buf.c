@@ -6,6 +6,7 @@
 #include <linux/kfifo.h>
 #include <linux/mutex.h>
 #include <linux/iio/kfifo_buf.h>
+#include <linux/sched.h>
 
 struct iio_kfifo {
 	struct iio_buffer buffer;
@@ -35,6 +36,7 @@ static int iio_request_update_kfifo(struct iio_buffer *r)
 	kfifo_free(&buf->kf);
 	ret = __iio_allocate_kfifo(buf, buf->buffer.bytes_per_datum,
 				   buf->buffer.length);
+	r->stufftoread = false;
 error_ret:
 	return ret;
 }
@@ -97,6 +99,8 @@ static int iio_store_to_kfifo(struct iio_buffer *r,
 	ret = kfifo_in(&kf->kf, data, r->bytes_per_datum);
 	if (ret != r->bytes_per_datum)
 		return -EBUSY;
+	r->stufftoread = true;
+	wake_up_interruptible(&r->pollq);
 	return 0;
 }
 
@@ -111,6 +115,11 @@ static int iio_read_first_n_kfifo(struct iio_buffer *r,
 
 	n = rounddown(n, r->bytes_per_datum);
 	ret = kfifo_to_user(&kf->kf, buf, n, &copied);
+	if (kfifo_is_empty(&kf->kf))
+		r->stufftoread = false;
+	/* verify it is still empty to avoid race */
+	if (!kfifo_is_empty(&kf->kf))
+		r->stufftoread = true;
 
 	return copied;
 }

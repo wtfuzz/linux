@@ -668,12 +668,8 @@ irqreturn_t inv_read_fifo(int irq, void *dev_id)
 	}
 
 	inv_i2c_read(st, REG_INT_STATUS, 1, &int_status);
-	printk("INT STATUS 0x%02X\n", int_status);
 	inv_i2c_read(st, REG_DMP_INT_STATUS, 1, &dmp_int_status);
-	printk("DMP INT STATUS 0x%02X\n", dmp_int_status);
-
 	inv_i2c_read(st, REG_INT_ENABLE, 1, &int_enable);
-	printk("INT ENABLE 0x%02X\n", int_enable);
 
 	if (st->chip_config.dmp_on && st->chip_config.flick_int_on) {
 		if (dmp_int_status & 8)
