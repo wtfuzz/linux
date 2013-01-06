@@ -1690,8 +1690,6 @@ ssize_t inv_dmp_firmware_write(struct file *fp, struct kobject *kobj,
 	result = inv_accel_dmp_cal(st);
 	if (result)
 		goto firmware_write_fail;
-	if (result)
-		goto firmware_write_fail;
 	st->chip_config.firmware_loaded = 1;
 	result = size;
 firmware_write_fail:

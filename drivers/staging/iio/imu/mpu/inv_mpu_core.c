@@ -745,7 +745,7 @@ static ssize_t inv_dmp_int_on_store(struct device *dev,
 	st = iio_priv(indio_dev);
 
 	CHECK_DMP
-	st->chip_config.dmp_int_on = !!data;
+	st->chip_config.dmp_int_on = data;
 	return count;
 }
 

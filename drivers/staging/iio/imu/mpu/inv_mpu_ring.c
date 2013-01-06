@@ -262,8 +262,8 @@ reset_fifo_fail:
  */
 static int inv_reset_fifo(struct iio_dev *indio_dev)
 {
-	struct inv_gyro_state_s *st = iio_priv(indio_dev);
 #if 0
+	struct inv_gyro_state_s *st = iio_priv(indio_dev);
 	if (INV_MPU3050 == st->chip_type)
 		return reset_fifo_mpu3050(indio_dev);
 	else
@@ -703,7 +703,6 @@ irqreturn_t inv_read_fifo(int irq, void *dev_id)
 		}
 
 		fifo_count = (data[0] << 8) + data[1];
-		printk("%s: fifo_count=%d\n", __func__, fifo_count);
 		if (fifo_count < bytes_per_datum)
 			goto end_session;
 		if (fifo_count%2)
